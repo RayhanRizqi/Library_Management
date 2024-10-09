@@ -18,13 +18,14 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
-# app.config['SECRET_KEY'] = 'hard to guess string'
 
 Session(app)
 
+# Connection to the PostgreSQL
 conn = psycopg2.connect(database="flask_db", user="postgres",
                         password="root", host="localhost", port="5432")
 
+# the cursor for the PostgreSQL: use db to perform a sql query
 db = conn.cursor(cursor_factory=RealDictCursor)
 
 @app.after_request
@@ -35,6 +36,7 @@ def after_request(response):
     response.headers["Pragma"] = "no-cache"
     return response
 
+# Flask route for the homepage, directs to index.html
 @app.route('/')
 @login_required
 def index():
@@ -63,6 +65,7 @@ def index():
     # Render the index page with the user's details
     return render_template('index.html', username=username, memberships=memberships, books=books)
 
+# Flask route for the logout page, which logs the user out of the profile
 @app.route("/logout")
 def logout():
     """Log user out"""
@@ -73,31 +76,39 @@ def logout():
     # Redirect user to login form
     return redirect("/")
 
+# Flask route for looking at the list of libraries, directs to viewLibrary.html
 @app.route("/view_library")
 @login_required
 def view_library():
     """View books in libraries"""
 
-    get_libraries_query = """
-    SELECT membership_id FROM library
-    """
+    # Gets the list of all libraries in the system
+    get_libraries_query = "SELECT membership_id FROM library"
     db.execute(get_libraries_query)
     libraries = db.fetchall()
+
+    # Directs the user to viewLibrary.html
     return render_template("viewLibrary.html", libraries=libraries)
 
+# Flask route for the membership page, which is in membership.html
 @app.route("/membership", methods=["GET", "POST"])
 @login_required
 def membership_page():
     """Show user's memberships and options to acquire new ones"""
+    # Gets the user's id
     user_id = session['user_id']
 
+    # Gets all the info of the uesr
     db.execute("SELECT * FROM users WHERE uid = %s", (user_id,))
     user = db.fetchone()
+
+    # Gets the list of membership id's the user has. If none, make one
     if user["membership_id"] is None:
         current_memberships = []
     else:
         current_memberships = user['membership_id']
 
+    # Gets the list of libraries that the user does not have a membership in
     db.execute("""
                SELECT library.* 
                FROM library 
@@ -106,10 +117,15 @@ def membership_page():
                """, (user_id,))
     libraries = db.fetchall()
 
+    # POST route for generating a membership id for the user
     if request.method == "POST":
+        # Gets the information of the library that the user wants to get a membership from
         library_id = request.form.get("library_id")
         library_name = request.form.get("library_name")
 
+        # The formula for generating the next membership is this: {library_name}{n+1}
+        # library_name is the prefix of the library stored in the library table
+        # n is the number of people who has a membership to the library
         db.execute("""
             SELECT COUNT(*)
             FROM membership
@@ -117,13 +133,16 @@ def membership_page():
         """, (library_id,))
         membership_count = db.fetchone()['count']
 
+        # Generates the new membership for the user
         next_membership_id = f"{library_name}{membership_count + 1}"
 
+        # Generates a new row into the membership table to record the transaction
         db.execute("""
             INSERT INTO membership (lid, uid, date_of_acquisition)
             VALUES (%s, %s, %s)
         """, (library_id, user_id, datetime.date.today()))
 
+        # Adds the new membership to the user's membership id list
         current_memberships.append(next_membership_id)
 
         db.execute("""
@@ -134,8 +153,10 @@ def membership_page():
 
         conn.commit()
 
+        # Confirmation displayed to the user for the new membership id
         flash(f"You have successfully obtained {next_membership_id}")
 
+        # Update the user's info to display onto the membership page
         db.execute("SELECT * FROM users WHERE uid = %s", (user_id,))
         user = db.fetchone()
         if user["membership_id"] is None:
@@ -153,6 +174,7 @@ def membership_page():
 
     return render_template("membership.html", memberships=current_memberships, libraries=libraries)
 
+# Flask route for viewing the list of books available for checkout in the chosen library
 @app.route("/library/<membership_id>", methods=["GET"])
 @login_required
 def view_specific_library(membership_id):
@@ -162,6 +184,7 @@ def view_specific_library(membership_id):
     db.execute("SELECT * FROM library WHERE membership_id = %s", (membership_id,))
     library_details = db.fetchone()
 
+    # Correcting for edge case
     if not library_details:
         return apology("Library not found", 404)
 
@@ -169,6 +192,7 @@ def view_specific_library(membership_id):
     bids = library_details['bids']
     search_query = request.args.get('search', '')
 
+    # Gets the list of books available in the library
     if bids:
         if search_query:
             # Search for books with titles matching the query
@@ -186,10 +210,12 @@ def view_specific_library(membership_id):
     # Render the template with the books and library details
     return render_template("libraryDetail.html", library=library_details, books=books)
 
+# Flask route for the search bar function in the libraryDetail.html page
 @app.route("/library/<membership_id>/search")
 @login_required
 def search_books_in_library(membership_id):
     """Search for books in the specified library based on the search query"""
+    # Gets the content of the search bar
     search_query = request.args.get('query', '')
 
     # Query to fetch details of the selected library
@@ -218,6 +244,7 @@ def search_books_in_library(membership_id):
     # Return the filtered books in JSON format
     return jsonify({'books': books})
 
+# Flask route for checking out the book from a library
 @app.route("/library/<membership_id>/checkout", methods=["POST"])
 @login_required
 def checkout_book(membership_id):
@@ -256,7 +283,9 @@ def checkout_book(membership_id):
     
     if already_checked_out:
         return apology("You have already checked out this book", 400)
-    
+
+    # TODO: Instead of inserting a new row into checkBook table,
+    # modify the existing row with the lid, uid, bid, and pick the lates one by date
     # Add a new row to the checkBook table
     db.execute("""
         INSERT INTO checkBook (lid, uid, bid, checkIn, checkOutDate, duration)
@@ -283,6 +312,7 @@ def checkout_book(membership_id):
     # Redirect the user to the index page
     return redirect("/")
 
+# Flask route for the login page, the first page as a new user
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Log user in"""
@@ -323,7 +353,7 @@ def login():
     else:
         return render_template("login.html")
     
-
+# Flask route for the register page, directing the user to register.html
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
