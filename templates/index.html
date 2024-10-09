@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Welcome
+{% endblock %}
+
+{% block main %}
+    <div class="container">
+        <h2>Hi {{ username }}!</h2>
+
+        <h3>Your Library Memberships</h3>
+        {% if memberships %}
+            <ul class="membership-list">
+                {% for membership in memberships %}
+                    <li>{{ membership }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>You are not a member of any libraries yet.</p>
+        {% endif %}
+
+        <div class="spacer"></div>
+
+        <h3>Your Checked-Out Books</h3>
+        {% if books %}
+            <div class="book-grid">
+                {% for book in books %}
+                    <div class="book-item">
+                        <img src="{{ book.book_cover }}" alt="{{ book.title }} Cover" class="book-cover">
+                        <p>{{ book.title }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>You have not checked out any books yet.</p>
+        {% endif %}
+    </div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Membership Page
+{% endblock %}
+
+{% block main %}
+    <div class="container">
+        <h2>Your Memberships</h2>
+
+        {% if memberships %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Membership ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for membership in memberships %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td class="membership-cell">
+                                <!-- Assuming memberships are in the format "Library A1", extract the library's actual membership_id -->
+                                {% set library_membership_id = membership[:-1] %} <!-- Extracts "Library A" from "Library A1" -->
+                                <a href="{{ url_for('view_specific_library', membership_id=library_membership_id) }}" class="membership-link">
+                                    {{ membership }}
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>You don't have any memberships yet.</p>
+        {% endif %}
+
+        <!-- Add some space between memberships and available libraries -->
+        <div class="spacer"></div>
+
+        <h2>Available Libraries</h2>
+
+        <div class="library-grid">
+            <form method="POST">
+                <div class="library-list">
+                    {% for library in libraries %}
+                        <div class="library-item">
+                            <h4>{{ library.membership_id }}</h4>
+                            <input type="hidden" name="library_id" value="{{ library.lid }}">
+                            <input type="hidden" name="library_name" value="{{ library.membership_id }}">
+                            <button type="submit" class="btn btn-primary">Get Membership</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

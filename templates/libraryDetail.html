@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    {{ library.membership_id }} Details
+{% endblock %}
+
+{% block main %}
+
+    <!-- Search Form for Filtering Books -->
+    <div class="search-container">
+        <form id="searchForm" class="search-form">
+            <input type="text" id="bookSearch" placeholder="Search for a book by title..." class="form-control search-input">
+        </form>
+    </div>
+
+    <!-- Spacer for layout -->
+    <div class="spacer"></div>
+
+    <!-- Books Table -->
+    {% if books %}
+        <h3>Books in {{ library.membership_id }}</h3>
+        <p>Number of Books Available: <span id="bookCount">{{ books | length }}</span></p>
+        <table class="table table-striped custom-table" id="booksTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Book Title</th>
+                    <th>Author</th>
+                    <th>Year</th>
+                    <th>Action</th> <!-- New column for Check Out button -->
+                </tr>
+            </thead>
+            <tbody id="booksTableBody">
+                {% for book in books %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ book.title }}</td>
+                        <td>{{ book.author }}</td>
+                        <td>{{ book.year }}</td>
+                        <td>
+                            <!-- Button to check out the book -->
+                            <form method="POST" action="{{ url_for('checkout_book', membership_id=library.membership_id) }}">
+                                <input type="hidden" name="bid" value="{{ book.bid }}">
+                                <button type="submit" class="btn btn-primary">Check Out</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No books available in this library.</p>
+    {% endif %}
+
+    <!-- JavaScript to handle real-time search and AJAX request -->
+    <script>
+        document.getElementById("bookSearch").addEventListener("input", function() {
+            const searchQuery = this.value;
+
+            // Send an AJAX request to the server
+            fetch(`/library/{{ library.membership_id }}/search?query=${searchQuery}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Clear the table
+                    const tableBody = document.getElementById("booksTableBody");
+                    tableBody.innerHTML = '';
+
+                    // Update the table with the filtered books
+                    if (data.books.length > 0) {
+                        data.books.forEach((book, index) => {
+                            const row = `<tr>
+                                            <td>${index + 1}</td>
+                                            <td>${book.title}</td>
+                                            <td>${book.author}</td>
+                                            <td>${book.year}</td>
+                                            <td>
+                                                <form method="POST" action="/library/{{ library.membership_id }}/checkout">
+                                                    <input type="hidden" name="bid" value="${book.bid}">
+                                                    <button type="submit" class="btn btn-primary">Check Out</button>
+                                                </form>
+                                            </td>
+                                        </tr>`;
+                            tableBody.innerHTML += row;
+                        });
+                    } else {
+                        tableBody.innerHTML = '<tr><td colspan="5">No books found</td></tr>';
+                    }
+
+                    // Update the book count
+                    document.getElementById("bookCount").innerText = data.books.length;
+                });
+        });
+    </script>
+{% endblock %}

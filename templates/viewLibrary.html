@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    View Library
+{% endblock %}
+
+{% block main %}
+    <h2>Library Memberships</h2>
+    
+    <table class="table table-striped custom-table">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Membership ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for library in libraries %}
+                <tr>
+                    <th scope="row">{{ loop.index }}</th>  <!-- Renders the row number -->
+                    <td class="membership-cell">
+                        <!-- Wrap the Membership ID in a link without styling -->
+                        <a href="{{ url_for('view_specific_library', membership_id=library.membership_id) }}" class="membership-link">
+                            {{ library.membership_id }}
+                        </a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="2">No libraries found</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

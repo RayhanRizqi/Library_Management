@@ -1,0 +1,119 @@
+/* Size for brand */
+nav .navbar-brand {
+    font-size: xx-large;
+}
+
+/* Colors for brand */
+nav .navbar-brand .blue {
+    color: #537fbe;
+}
+nav .navbar-brand .red {
+    color: #ea433b;
+}
+nav .navbar-brand .yellow {
+    color: #f5b82e;
+}
+nav .navbar-brand .green {
+    color: #2e944b;
+}
+
+nav .navbar-brand .purple {
+    color: #240B36;
+}
+
+nav .navbar-brand .olive {
+    color: #8cba80;
+}
+
+.book-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.book-item {
+    text-align: center;
+}
+
+.book-cover {
+    width: 100px;
+    height: 150px;
+    object-fit: cover;
+    margin-bottom: 10px;
+}
+
+.custom-table {
+    width: 50%;
+    margin: 0 auto;
+}
+
+/* Spacer to separate sections */
+.spacer {
+    margin: 20px 0;
+}
+
+/* Remove default link styling */
+.membership-link {
+    color: inherit;
+    text-decoration: none;
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Change cursor to pointer when hovering over the link */
+.membership-link:hover {
+    cursor: pointer;
+}
+
+/* Highlight the cell when hovered over */
+.membership-cell:hover {
+    background-color: #d3d3d3;
+    transition: 0.7s;
+}
+
+/* Custom table styles */
+.custom-table {
+    width: 80%;
+    margin: 0 auto;
+}
+
+/* Spacer between search bar and table */
+.spacer {
+    margin: 20px 0;
+}
+
+/* Center the search bar */
+.search-container {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.search-form {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.search-input {
+    width: 300px;  /* Adjust the width here to make it smaller */
+    margin-right: 10px;  /* Space between search input and button */
+}
+
+.search-button {
+    height: 38px; /* Match the input height */
+    padding: 5px 15px;
+}
+
+/* Style for the membership list to make bullet points smaller */
+.membership-list {
+    list-style-type: disc;
+    padding-left: 20px;
+    /* font-size: smaller; */
+}
+
+.membership-list li {
+    margin-bottom: 5px;
+    list-style-position: inside;
+}
