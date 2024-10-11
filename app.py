@@ -284,8 +284,6 @@ def checkout_book(membership_id):
     if already_checked_out:
         return apology("You have already checked out this book", 400)
 
-    # TODO: Instead of inserting a new row into checkBook table,
-    # modify the existing row with the lid, uid, bid, and pick the lates one by date
     # Add a new row to the checkBook table
     db.execute("""
         INSERT INTO checkBook (lid, uid, bid, checkIn, checkOutDate, duration)
@@ -310,7 +308,7 @@ def checkout_book(membership_id):
     conn.commit()
     
     # Redirect the user to the index page
-    return redirect("/")
+    return redirect(f"/library/{membership_id}")
 
 # Flask route for the login page, the first page as a new user
 @app.route("/login", methods=["GET", "POST"])
@@ -395,6 +393,52 @@ def register():
 
     else:
         return render_template("register.html")
+
+@app.route("/settings")
+@login_required
+def settings():
+    """Show settings"""
+    # Query database
+    db.execute("SELECT name FROM users WHERE uid = %s", (session["user_id"],))
+    name = db.fetchone()['name']
+    return render_template("settings.html", name=name)
+
+@app.route("/passwordupdate", methods=["GET", "POST"])
+@login_required
+def passwordupdate():
+    """Show settings"""
+
+    if request.method == "POST":
+
+        # Validate submission
+        currentpassword = request.form.get("currentpassword")
+        newpassword = request.form.get("newpassword")
+        confirmation = request.form.get("confirmation")
+
+        # Query database for username
+        db.execute("SELECT * FROM users WHERE uid = %s", (session["user_id"],))
+        rows = db.fetchall()
+
+        # Ensure password == confirmation
+        if not (newpassword == confirmation):
+            return apology("the passwords do not match", 400)
+
+        # Ensure password not blank
+        if currentpassword == "" or newpassword == "" or confirmation == "":
+            return apology("input is blank", 400)
+
+       # Ensure password is correct
+        if not check_password_hash(rows[0]["hash"], currentpassword):
+            return apology("invalid password", 403)
+        else:
+            hashcode = generate_password_hash(newpassword, method='pbkdf2:sha256', salt_length=8)
+            db.execute("UPDATE users SET hash = %s WHERE uid = %s", (hashcode, session["user_id"]))
+
+        # Redirect user to settings
+        return redirect("/settings")
+
+    else:
+        return render_template("passwordupdate.html")
 
 if __name__ == '__main__':
     app.run(debug=True)
