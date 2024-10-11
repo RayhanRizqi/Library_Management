@@ -310,6 +310,93 @@ def checkout_book(membership_id):
     # Redirect the user to the index page
     return redirect(f"/library/{membership_id}")
 
+@app.route("/book/<book_id>")
+@login_required
+def view_book(book_id):
+    """Show details of a specific book and calculate return date"""
+
+    # Query the database to get the details of the selected book
+    db.execute("SELECT * FROM book WHERE bid = %s", (book_id,))
+    book = db.fetchone()
+
+    # If the book does not exist, return an error
+    if not book:
+        return apology("Book not found", 404)
+
+    # Query the database to get the checkBook details for this book and the current user
+    db.execute("""
+        SELECT checkOutDate, duration 
+        FROM checkBook 
+        WHERE bid = %s AND uid = %s AND checkIn = False
+    """, (book_id, session['user_id']))
+    check_book = db.fetchone()
+
+    print(check_book)  # Debugging statement to see what check_book contains
+
+    # Calculate how many days are left before the book is due
+    if check_book:
+        checkout_date = check_book.get('checkoutdate')  # Use .get() to avoid KeyError
+        duration = check_book.get('duration')  # Use .get() to avoid KeyError
+
+        if checkout_date and duration:
+            due_date = checkout_date + datetime.timedelta(days=duration)
+            today = datetime.date.today()
+            days_left = (due_date - today).days
+        else:
+            days_left = None  # Handle case where data might be missing or incomplete
+    else:
+        days_left = None  # This will cover cases where the user has not checked out the book
+
+    # Render the book details template, passing the book and days_left information
+    return render_template("book.html", book=book, days_left=days_left)
+
+@app.route("/book/<book_id>/return", methods=["POST"])
+@login_required
+def return_book(book_id):
+    """Handle the process of returning a book to the library."""
+    
+    # Get the user ID from the session
+    user_id = session['user_id']
+
+    # Fetch the library ID where the book was checked out from
+    db.execute("""
+        SELECT lid FROM checkBook WHERE bid = %s AND uid = %s AND checkIn = False
+    """, (book_id, user_id))
+    check_book = db.fetchone()
+
+    if not check_book:
+        return apology("You haven't checked out this book", 400)
+    
+    library_id = check_book['lid']
+
+    # Remove the book from the user's bids array
+    db.execute("""
+        UPDATE users
+        SET bids = array_remove(bids, %s)
+        WHERE uid = %s
+    """, (book_id, user_id))
+
+    # Set the checkIn to True in the checkBook table to mark the return
+    db.execute("""
+        UPDATE checkBook
+        SET checkIn = True
+        WHERE bid = %s AND uid = %s AND lid = %s
+    """, (book_id, user_id, library_id))
+
+    # Add the book back to the library's bids array
+    db.execute("""
+        UPDATE library
+        SET bids = array_append(bids, %s)
+        WHERE lid = %s
+    """, (book_id, library_id))
+
+    # Commit the transaction
+    conn.commit()
+
+    # Redirect the user back to the book details page with a success message
+    flash("You have successfully returned the book.")
+    return redirect("/")
+
 # Flask route for the login page, the first page as a new user
 @app.route("/login", methods=["GET", "POST"])
 def login():

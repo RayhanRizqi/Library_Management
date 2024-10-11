@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Book Details
+{% endblock %}
+
+{% block main %}
+    <div class="container">
+        <h2>{{ book.title }}</h2>
+        <img src="{{ book.book_cover }}" alt="{{ book.title }} Cover" class="book-detail-cover">
+        <ul class="book-details">
+            <p><strong>ISBN:</strong> {{ book.bid }}</p>
+            <p><strong>Author:</strong> {{ book.author }}</p>
+            <p><strong>Year of Publication:</strong> {{ book.year }}</p>
+            
+            {% if days_left is not none %}
+                <p><strong>Days Left to Return:</strong> {{ days_left }} days</p>
+                <!-- Return Book button -->
+                <form action="/book/{{ book.bid }}/return" method="POST">
+                    <button type="submit" class="btn btn-primary">Return Book</button>
+                </form>
+            {% else %}
+                <p><strong>Status:</strong> You have not checked out this book.</p>
+            {% endif %}
+        </ul>
+    </div>
+{% endblock %}

@@ -25,10 +25,13 @@
         {% if books %}
             <div class="book-grid">
                 {% for book in books %}
-                    <div class="book-item">
-                        <img src="{{ book.book_cover }}" alt="{{ book.title }} Cover" class="book-cover">
-                        <p>{{ book.title }}</p>
-                    </div>
+                    <!-- Wrap book item with an anchor link to make it clickable -->
+                    <a href="{{ url_for('view_book', book_id=book.bid) }}" class="book-item">
+                        <div class="book-item-content">
+                            <img src="{{ book.book_cover }}" alt="{{ book.title }} Cover" class="book-cover">
+                            <p>{{ book.title }}</p>
+                        </div>
+                    </a>
                 {% endfor %}
             </div>
         {% else %}

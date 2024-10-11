@@ -43,6 +43,13 @@ nav .navbar-brand .olive {
     margin-bottom: 10px;
 }
 
+.book-detail-cover {
+    width: 200px;
+    height: 300px;
+    object-fit: cover;
+    margin-bottom: 10px;
+}
+
 .custom-table {
     width: 50%;
     margin: 0 auto;
